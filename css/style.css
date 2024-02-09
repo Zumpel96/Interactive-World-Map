@@ -26,6 +26,25 @@ canvas {
   background-color: black;
 }
 
+.current-year {
+  position: absolute;
+  top: 0;
+  right: 64px;
+  z-index: 99;
+  background-color:white;
+  width: 100px;
+  height: 50px;
+}
+
+.current-year > p {
+  margin: 13px 0 0 0;
+  padding: 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: black;
+}
+
 .range-slider {
   position: absolute;
   bottom: 64px;
