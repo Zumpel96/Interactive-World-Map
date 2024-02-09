@@ -82,6 +82,22 @@ function updateSlider(slideAmount)
   currentYear = slideAmount;
   const yearText = document.getElementById("year-text");
   yearText.innerHTML = currentYear;
+
+  if(currentDataEntry){
+    marker.forEach(function(dataEntry) {
+      if(dataEntry.timeFrom > currentYear || dataEntry.timeUntil < currentYear) return;
+      if(dataEntry === currentDataEntry) return;
+
+      if (currentDataEntry.xLoc === dataEntry.xLoc && currentDataEntry.yLoc === dataEntry.yLoc) {
+        currentDataEntry = dataEntry;
+      }
+    });
+
+    if(currentDataEntry.timeFrom > currentYear || currentDataEntry.timeUntil < currentYear) {
+      currentDataEntry = null;
+    }
+  }
+
   draw();
 }
 
@@ -99,6 +115,10 @@ function draw() {
 
   marker.forEach(drawDataEntry);
 
+  if (currentDataEntry) {
+    drawTooltip(currentDataEntry);
+  }
+
   featherEdge(40, 40);
 }
 
@@ -115,9 +135,63 @@ function drawDataEntry(dataEntry) {
   }
 }
 
-function drawRectangle(dataEntry) {
-  ctx.fillStyle = "#FF0000";
-  ctx.fillRect(dataEntry.xLoc, dataEntry.yLoc, 100, 200);
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  let words = text.split(' ');
+  let line = '';
+  let yOffset = y;
+  let totalLines = 1;
+
+  for (let i = 0; i < words.length; i++) {
+    let testLine = line + words[i] + ' ';
+    let metrics = ctx.measureText(testLine);
+    let testWidth = metrics.width;
+
+    if (testWidth > maxWidth && i > 0) {
+      ctx.fillText(line, x, yOffset);
+      line = words[i] + ' ';
+      yOffset += lineHeight;
+      totalLines++;
+    } else {
+      line = testLine;
+    }
+  }
+
+  ctx.fillText(line, x, yOffset);
+  return totalLines;
+}
+
+function drawTooltip(dataEntry) {
+  let x = dataEntry.xLoc;
+  let y = dataEntry.yLoc;
+
+  const width = 300;
+  const height = 200;
+  const marginX = 20;
+  const marginY = -50;
+
+  x = (x + offsetX) > (window.innerWidth / 2) ? x - (width + marginX) : x + marginX;
+  y = (y + offsetY) > (window.innerHeight / 2) ? y - (height + marginY) : y + marginY;
+
+  ctx.shadowBlur=30;
+  ctx.shadowColor= "#000000";
+  for(var i=0;i<5;i++){
+    ctx.shadowBlur+=0.25;
+    ctx.strokeRect(x, y, width, height);
+  }
+  ctx.shadowColor='rgba(0,0,0,0)';
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(x, y, width, height);
+
+  ctx.strokeStyle = "#FFD700";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(x, y, width, height);
+
+  ctx.fillStyle = '#000000'; // Set text color
+  ctx.font = '20px Arial';
+  var lines = wrapText(ctx, dataEntry.marker, x + 10, y + 30, width - 20, 28);
+  ctx.font = '14px Arial';
+  wrapText(ctx, dataEntry.text, x + 10, y + 30 + lines * 30, width - 20, 18);
 }
 
 function drawCircle(dataEntry) {
@@ -131,6 +205,28 @@ function drawCircle(dataEntry) {
 }
 
 canvas.addEventListener('mousedown', function (event) {
+  let clickedX = (event.clientX - offsetX) / scale;
+  let clickedY = (event.clientY - offsetY) / scale;
+  let hit = false;
+
+  marker.forEach(function(dataEntry) {
+    if(dataEntry.timeFrom > currentYear || dataEntry.timeUntil < currentYear) return;
+
+    let markerX = dataEntry.xLoc / scale;
+    let markerY = dataEntry.yLoc / scale;
+
+    if (Math.abs(clickedX - markerX) < 10 && Math.abs(clickedY - markerY) < 10) {
+      currentDataEntry = dataEntry;
+      hit = true;
+    }
+  });
+
+  if(hit) {
+    draw();
+    return;
+  }
+
+  currentDataEntry = null;
   lastX = event.clientX;
   lastY = event.clientY;
   dragging = true;
@@ -155,10 +251,10 @@ canvas.addEventListener('mousemove', function (event) {
 });
 
 canvas.addEventListener('wheel', function (event) {
-  let delta = event.deltaY > 0 ? -0.1 : 0.1;
+  /*let delta = event.deltaY > 0 ? -0.1 : 0.1;
   scale += delta * zoomSpeed;
   scale = Math.max(0.1, scale); // Ensure scale doesn't go below 0.1
-  draw();
+  draw();*/
 });
 
 canvas.addEventListener('contextmenu', function (event) {

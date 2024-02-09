@@ -1,4 +1,4 @@
-marker;time-from;time-until;x-loc;y-loc;text
-AB040_NeverwinterCity;-3000;1200;100;200;Barren land, no city
-AB040_NeverwinterCity;1201;1250;100;200;Settlement of 500 people
-AB038_Gauntlgrym;-3000;1200;400;300;Inactive volcano
+marker;time-from;time-until;x-loc;y-loc;text;image
+AB040_NeverwinterCity;-3000;1200;100;200;Barren land, no city. This is a long text to check if the linebreaks are working correctly or something needs to be fixed.;test.png
+AB040_NeverwinterCity;1201;1250;100;200;Settlement of 500 people;
+AB038_Gauntlgrym;-3000;1200;400;300;Inactive volcano;
