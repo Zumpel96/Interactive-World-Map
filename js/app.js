@@ -68,10 +68,18 @@ function draw() {
   ctx.clearRect(0,0, window.innerWidth, window.innerHeight)
 
   ctx.imageSmoothingQuality = "high";
-
   ctx.drawImage(img, 0, 0);
 
   marker.forEach(drawRectangle);
+
+  featherEdge(40, 40);
+}
+
+function featherEdge(blurRadius, inset) {
+  ctx.filter = "blur(" + blurRadius + "px)";
+  ctx.globalCompositeOperation = "destination-in";
+  const inBy = blurRadius + inset;
+  ctx.fillRect(inBy, inBy, canvas.width - inBy * 2, canvas.height - inBy * 2);
 }
 
 function drawRectangle(dataEntry) {
