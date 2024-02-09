@@ -19,14 +19,15 @@ let currentYear = 0;
 let minYear = 999999;
 let maxYear = -999999;
 let marker = [];
+let currentDataEntry = null;
 
 function parseCSV(csv) {
   const lines = csv.split('\n');
   for (let i = 1; i < lines.length; i++) { // Start from 1 to skip the header line
     const fields = lines[i].split(';');
     const title = fields[0];
-    const timeFrom = fields[1];
-    const timeUntil = fields[2];
+    const timeFrom = parseInt(fields[1]);
+    const timeUntil = parseInt(fields[2]);
     const xLoc = parseFloat(fields[3]);
     const yLoc = parseFloat(fields[4]);
     const text = fields[5];
@@ -81,6 +82,7 @@ function updateSlider(slideAmount)
   currentYear = slideAmount;
   const yearText = document.getElementById("year-text");
   yearText.innerHTML = currentYear;
+  draw();
 }
 
 function draw() {
@@ -95,7 +97,7 @@ function draw() {
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, 0, 0);
 
-  marker.forEach(drawRectangle);
+  marker.forEach(drawDataEntry);
 
   featherEdge(40, 40);
 }
@@ -107,9 +109,25 @@ function featherEdge(blurRadius, inset) {
   ctx.fillRect(inBy, inBy, canvas.width - inBy * 2, canvas.height - inBy * 2);
 }
 
+function drawDataEntry(dataEntry) {
+  if (dataEntry.timeFrom <= currentYear && dataEntry.timeUntil >= currentYear) {
+    drawCircle(dataEntry);
+  }
+}
+
 function drawRectangle(dataEntry) {
   ctx.fillStyle = "#FF0000";
   ctx.fillRect(dataEntry.xLoc, dataEntry.yLoc, 100, 200);
+}
+
+function drawCircle(dataEntry) {
+  ctx.beginPath();
+  ctx.arc(dataEntry.xLoc, dataEntry.yLoc, 10, 0, 2 * Math.PI, false);
+  ctx.fillStyle = "#FFD700";
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#000000';
+  ctx.stroke();
 }
 
 canvas.addEventListener('mousedown', function (event) {
