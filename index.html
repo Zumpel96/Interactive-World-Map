@@ -11,12 +11,12 @@
 <body>
 
   <div class="current-year">
-    <p id="year-text">123</p>
+    <p id="year-text">0</p>
   </div>
 
   <div class="range-slider">
     <label>
-      <input class="range-slider__range" type="range" value="100" min="0" max="500">
+      <input class="range-slider__range" id="year-range" type="range" oninput="updateSlider(this.value)">
     </label>
   </div>
 

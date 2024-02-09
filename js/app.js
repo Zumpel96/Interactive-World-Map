@@ -15,6 +15,9 @@ let offsetX = 0;
 let offsetY = 0;
 let panSpeed = 1;
 let zoomSpeed = 0.1;
+let currentYear = 0;
+let minYear = 999999;
+let maxYear = -999999;
 let marker = [];
 
 function parseCSV(csv) {
@@ -37,9 +40,13 @@ function parseCSV(csv) {
       text: text
     };
 
-    console.log(dataEntry);
+    if(timeFrom < minYear) minYear = timeFrom;
+    if(timeUntil > maxYear) maxYear = timeUntil;
+
     marker.push(dataEntry);
   }
+
+  currentYear = minYear;
 }
 
 function loadCSV(url) {
@@ -52,11 +59,28 @@ function loadCSV(url) {
     })
     .then(csvData => {
       parseCSV(csvData);
+      initializeSlider();
       draw();
     })
     .catch(error => {
       console.error('Fetch error:', error);
     });
+}
+
+function initializeSlider() {
+  const slider = document.getElementById("year-range");
+  slider.min = minYear;
+  slider.max = maxYear;
+
+  updateSlider(currentYear);
+  slider.value = currentYear;
+}
+
+function updateSlider(slideAmount)
+{
+  currentYear = slideAmount;
+  const yearText = document.getElementById("year-text");
+  yearText.innerHTML = currentYear;
 }
 
 function draw() {
