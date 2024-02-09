@@ -21,6 +21,13 @@ let maxYear = -999999;
 let marker = [];
 let currentDataEntry = null;
 
+let imageCache = [];
+
+const width = 300;
+const height = 200;
+const marginX = 20;
+const marginY = -50;
+
 function parseCSV(csv) {
   const lines = csv.split('\n');
   for (let i = 1; i < lines.length; i++) { // Start from 1 to skip the header line
@@ -31,6 +38,7 @@ function parseCSV(csv) {
     const xLoc = parseFloat(fields[3]);
     const yLoc = parseFloat(fields[4]);
     const text = fields[5];
+    const image = fields[6];
 
     const dataEntry = {
       marker: title,
@@ -38,7 +46,8 @@ function parseCSV(csv) {
       timeUntil: timeUntil,
       xLoc: xLoc,
       yLoc: yLoc,
-      text: text
+      text: text,
+      image: image,
     };
 
     if(timeFrom < minYear) minYear = timeFrom;
@@ -117,9 +126,38 @@ function draw() {
 
   if (currentDataEntry) {
     drawTooltip(currentDataEntry);
+
+    if(currentDataEntry.image) {
+      if(currentDataEntry.image in imageCache) {
+        let img = imageCache[currentDataEntry.image];
+        drawImage(img);
+      } else {
+        let img = new Image();
+        img.onload = function () {
+          imageCache[currentDataEntry.image] = img;
+          draw();
+        };
+        img.src = '../img/TimeLinePics/' + currentDataEntry.image;
+      }
+    }
   }
 
   featherEdge(40, 40);
+}
+
+function drawImage(img) {
+  let size = 64;
+
+  let x = currentDataEntry.xLoc;
+  let y = currentDataEntry.yLoc;
+
+  x = (x + offsetX) > (window.innerWidth / 2) ? x - (width + marginX) + width - size / 2 : x + marginX + width - size / 2;
+  y = (y + offsetY) > (window.innerHeight / 2) ? y - (height + marginY) - size / 2 : y + marginY - size / 2;
+
+  ctx.drawImage(img, x, y, size, size);
+  ctx.strokeStyle = "#FFD700";
+  ctx.lineWidth = 5;
+  ctx.strokeRect(x, y, size, size);
 }
 
 function featherEdge(blurRadius, inset) {
@@ -163,11 +201,6 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 function drawTooltip(dataEntry) {
   let x = dataEntry.xLoc;
   let y = dataEntry.yLoc;
-
-  const width = 300;
-  const height = 200;
-  const marginX = 20;
-  const marginY = -50;
 
   x = (x + offsetX) > (window.innerWidth / 2) ? x - (width + marginX) : x + marginX;
   y = (y + offsetY) > (window.innerHeight / 2) ? y - (height + marginY) : y + marginY;
