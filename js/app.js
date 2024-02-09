@@ -37,6 +37,7 @@ function parseCSV(csv) {
       text: text
     };
 
+    console.log(dataEntry);
     marker.push(dataEntry);
   }
 }
