@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 
 let img = new Image();
 img.onload = function () {
-  draw();
+  loadCSV('./data.csv')
 };
 img.src = '../img/world_map.jpg'; // Replace 'image-url.jpg' with the path to your image
 
@@ -15,6 +15,48 @@ let offsetX = 0;
 let offsetY = 0;
 let panSpeed = 1;
 let zoomSpeed = 0.1;
+let marker = [];
+
+function parseCSV(csv) {
+  const lines = csv.split('\n');
+  for (let i = 1; i < lines.length; i++) { // Start from 1 to skip the header line
+    const fields = lines[i].split(';');
+    const title = fields[0];
+    const timeFrom = fields[1];
+    const timeUntil = fields[2];
+    const xLoc = parseFloat(fields[3]);
+    const yLoc = parseFloat(fields[4]);
+    const text = fields[5];
+
+    const dataEntry = {
+      marker: title,
+      timeFrom: timeFrom,
+      timeUntil: timeUntil,
+      xLoc: xLoc,
+      yLoc: yLoc,
+      text: text
+    };
+
+    marker.push(dataEntry);
+  }
+}
+
+function loadCSV(url) {
+  fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.text();
+    })
+    .then(csvData => {
+      parseCSV(csvData);
+      draw();
+    })
+    .catch(error => {
+      console.error('Fetch error:', error);
+    });
+}
 
 function draw() {
   canvas.width = window.innerWidth
@@ -28,6 +70,13 @@ function draw() {
   ctx.imageSmoothingQuality = "high";
 
   ctx.drawImage(img, 0, 0);
+
+  marker.forEach(drawRectangle);
+}
+
+function drawRectangle(dataEntry) {
+  ctx.fillStyle = "#FF0000";
+  ctx.fillRect(dataEntry.xLoc, dataEntry.yLoc, 100, 200);
 }
 
 canvas.addEventListener('mousedown', function (event) {
