@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>D&D World Map</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="js/panZoom.js"></script>
 </head>
 
 <body>
@@ -20,7 +21,15 @@
     </label>
   </div>
 
-  <canvas id="map"></canvas>
+  <div data-zoom-on-wheel data-pan-on-drag style="height: 100%; width: 100%; background-color: black">
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <image href="./img/world_map.jpg" height="100%" width="100%" />
+      <g id="markers">
+      </g>
+    </svg>
+  </div>
+
+
   <script src="js/app.js"></script>
 
 </body>
