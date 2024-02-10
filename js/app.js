@@ -3,6 +3,12 @@ const ctx = canvas.getContext('2d');
 
 let img = new Image();
 img.onload = function () {
+  imageWidth = img.width;
+  imageHeight = img.height;
+
+  offsetX = -imageWidth / 2;
+  offsetY = -imageHeight / 2;
+
   loadCSV('./data.csv')
 };
 img.src = '../img/world_map.jpg'; // Replace 'image-url.jpg' with the path to your image
@@ -10,16 +16,18 @@ img.src = '../img/world_map.jpg'; // Replace 'image-url.jpg' with the path to yo
 let lastX = canvas.width / 2;
 let lastY = canvas.height / 2;
 let dragging = false;
-let scale = 1;
+let scale = 0.5;
 let offsetX = 0;
 let offsetY = 0;
-let panSpeed = 1;
+let panSpeed = 3;
 let zoomSpeed = 0.1;
 let currentYear = 0;
 let minYear = 999999;
 let maxYear = -999999;
 let marker = [];
 let currentDataEntry = null;
+let imageWidth = 0;
+let imageHeight = 0;
 
 let imageCache = [];
 
@@ -142,7 +150,7 @@ function draw() {
     }
   }
 
-  featherEdge(40, 40);
+  featherEdge(200, 200);
 }
 
 function drawImage(img) {
@@ -164,7 +172,7 @@ function featherEdge(blurRadius, inset) {
   ctx.filter = "blur(" + blurRadius + "px)";
   ctx.globalCompositeOperation = "destination-in";
   const inBy = blurRadius + inset;
-  ctx.fillRect(inBy, inBy, canvas.width - inBy * 2, canvas.height - inBy * 2);
+  ctx.fillRect(inBy, inBy, imageWidth - inBy * 2, imageHeight - inBy * 2);
 }
 
 function drawDataEntry(dataEntry) {
@@ -202,6 +210,8 @@ function drawTooltip(dataEntry) {
   let x = dataEntry.xLoc;
   let y = dataEntry.yLoc;
 
+  console.log(x, y);
+
   x = (x + offsetX) > (window.innerWidth / 2) ? x - (width + marginX) : x + marginX;
   y = (y + offsetY) > (window.innerHeight / 2) ? y - (height + marginY) : y + marginY;
 
@@ -209,44 +219,51 @@ function drawTooltip(dataEntry) {
   ctx.shadowColor= "#000000";
   for(var i=0;i<5;i++){
     ctx.shadowBlur+=0.25;
-    ctx.strokeRect(x, y, width, height);
+    ctx.strokeRect(x, y, width / scale, height / scale);
   }
   ctx.shadowColor='rgba(0,0,0,0)';
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(x, y, width, height);
+  ctx.fillRect(x, y, width / scale, height / scale);
 
   ctx.strokeStyle = "#FFD700";
-  ctx.lineWidth = 5;
-  ctx.strokeRect(x, y, width, height);
+  ctx.lineWidth = 5 / scale;
+  ctx.strokeRect(x, y, width / scale, height / scale);
 
   ctx.fillStyle = '#000000'; // Set text color
-  ctx.font = '20px Arial';
-  var lines = wrapText(ctx, dataEntry.marker, x + 10, y + 30, width - 20, 28);
-  ctx.font = '14px Arial';
-  wrapText(ctx, dataEntry.text, x + 10, y + 30 + lines * 30, width - 20, 18);
+  ctx.font = 20 / scale + 'px Arial';
+  var lines = wrapText(ctx, dataEntry.marker, x + 10 / scale, y + 30 / scale, width / scale - 20 / scale, 28 / scale);
+  ctx.font = 14 / scale + 'px Arial';
+  wrapText(ctx, dataEntry.text, x + 10 / scale, y + 30 / scale + lines * 30 / scale, width / scale - 20 / scale, 18 / scale);
 }
 
 function drawCircle(dataEntry) {
   ctx.beginPath();
-  ctx.arc(dataEntry.xLoc, dataEntry.yLoc, 10, 0, 2 * Math.PI, false);
+  ctx.arc(dataEntry.xLoc, dataEntry.yLoc, 8 / scale, 0, 2 * Math.PI, false);
   ctx.fillStyle = "#FFD700";
   ctx.fill();
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2 / scale;
   ctx.strokeStyle = '#000000';
   ctx.stroke();
 }
 
 canvas.addEventListener('mousedown', function (event) {
-  let clickedX = (event.clientX - offsetX) / scale;
-  let clickedY = (event.clientY - offsetY) / scale;
+  const rect = canvas.getBoundingClientRect()
+  const clickedX = event.clientX - rect.left
+  const clickedY = event.clientY - rect.top
+
+  const convertedX = imageWidth / rect.width * clickedX;
+  const convertedY = imageHeight / rect.height * clickedY;
+
   let hit = false;
+  console.log(clickedX, clickedY);
+  console.log(convertedX, convertedY);
 
   marker.forEach(function(dataEntry) {
     if(dataEntry.timeFrom > currentYear || dataEntry.timeUntil < currentYear) return;
 
-    let markerX = dataEntry.xLoc / scale;
-    let markerY = dataEntry.yLoc / scale;
+    let markerX = dataEntry.xLoc;
+    let markerY = dataEntry.yLoc;
 
     if (Math.abs(clickedX - markerX) < 10 && Math.abs(clickedY - markerY) < 10) {
       currentDataEntry = dataEntry;
@@ -284,10 +301,10 @@ canvas.addEventListener('mousemove', function (event) {
 });
 
 canvas.addEventListener('wheel', function (event) {
-  /*let delta = event.deltaY > 0 ? -0.1 : 0.1;
+  let delta = event.deltaY > 0 ? -0.1 : 0.1;
   scale += delta * zoomSpeed;
   scale = Math.max(0.1, scale); // Ensure scale doesn't go below 0.1
-  draw();*/
+  draw();
 });
 
 canvas.addEventListener('contextmenu', function (event) {
