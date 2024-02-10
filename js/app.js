@@ -9,6 +9,7 @@ const width = 4;
 const lineHeight = 0.25;
 const marginY = 0.35;
 const markerColor = "#FFD700";
+const imageSize = 2;
 
 function parseCSV(csv) {
   const lines = csv.split('\n');
@@ -142,7 +143,7 @@ function splitText(longText, maxChars) {
   let currentLine = "";
   let lines = [];
 
-  splitText.forEach(function(text, index) {
+  splitText.forEach(function(text) {
     currentLine = currentLine === "" ? text : currentLine + " " + text;
 
     if(currentLine.length > maxChars) {
@@ -168,16 +169,37 @@ function drawTooltip(dataEntry) {
   let splitTitle = splitText(dataEntry.marker, 36);
   let splitContent = splitText(dataEntry.text, 36);
 
-  let newElement = document.createElementNS("http://www.w3.org/2000/svg", 'rect'); //Create a path in SVG's namespace
-  newElement.setAttribute("x", x.toString());
-  newElement.setAttribute("y", y.toString());
-  newElement.setAttribute("width", width.toString());
-  newElement.setAttribute("height", (lineHeight * splitTitle.length + splitContent.length * lineHeight + marginY).toString());
-  newElement.setAttribute("stroke",markerColor);
-  newElement.setAttribute("fill","#ffffff");
-  newElement.setAttribute("stroke-width","0.15");
-  newElement.setAttribute("class", "shadow");
-  group.appendChild(newElement);
+  if(dataEntry.image) {
+    let imageBox = document.createElementNS("http://www.w3.org/2000/svg", 'rect'); //Create a path in SVG's namespace
+    imageBox.setAttribute("x", (x + width / 2 - imageSize / 2 - 0.075).toString());
+    imageBox.setAttribute("y", (y - imageSize - 0.075).toString());
+    imageBox.setAttribute("width", (imageSize + 0.075).toString());
+    imageBox.setAttribute("height", (imageSize + 0.075).toString());
+    imageBox.setAttribute("stroke",markerColor);
+    imageBox.setAttribute("fill","#ffffff");
+    imageBox.setAttribute("stroke-width","0.15");
+    imageBox.setAttribute("class", "shadow");
+    group.appendChild(imageBox);
+
+    let toolTipImage = document.createElementNS("http://www.w3.org/2000/svg", 'image'); //Create a path in SVG's namespace
+    toolTipImage.setAttribute("href", "../img/TimeLinePics/" + dataEntry.image);
+    toolTipImage.setAttribute("x", (x + width / 2 - imageSize / 2).toString());
+    toolTipImage.setAttribute("y", (y - imageSize).toString());
+    toolTipImage.setAttribute("width", (imageSize - 0.075).toString());
+    toolTipImage.setAttribute("height", (imageSize - 0.075).toString());
+    group.appendChild(toolTipImage);
+  }
+
+  let tooltip = document.createElementNS("http://www.w3.org/2000/svg", 'rect'); //Create a path in SVG's namespace
+  tooltip.setAttribute("x", x.toString());
+  tooltip.setAttribute("y", y.toString());
+  tooltip.setAttribute("width", width.toString());
+  tooltip.setAttribute("height", (lineHeight * splitTitle.length + splitContent.length * lineHeight + marginY).toString());
+  tooltip.setAttribute("stroke",markerColor);
+  tooltip.setAttribute("fill","#ffffff");
+  tooltip.setAttribute("stroke-width","0.15");
+  tooltip.setAttribute("class", "shadow");
+  group.appendChild(tooltip);
 
   splitTitle.forEach(function(line, index) {
     let title = document.createElementNS("http://www.w3.org/2000/svg", 'text');
@@ -210,21 +232,6 @@ function closeTooltip() {
     svg.removeChild(document.getElementById("current-marker"));
     currentDataEntry = null;
   }
-}
-
-function drawImage(img) {
-  let size = 64;
-
-  let x = currentDataEntry.xLoc;
-  let y = currentDataEntry.yLoc;
-
-  x = (x + offsetX) > (window.innerWidth / 2) ? x - (width + marginX) + width - size / 2 : x + marginX + width - size / 2;
-  y = (y + offsetY) > (window.innerHeight / 2) ? y - (height + marginY) - size / 2 : y + marginY - size / 2;
-
-  ctx.drawImage(img, x, y, size, size);
-  ctx.strokeStyle = "#FFD700";
-  ctx.lineWidth = 5;
-  ctx.strokeRect(x, y, size, size);
 }
 
 loadCSV('./data.csv')

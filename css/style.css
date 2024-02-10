@@ -29,6 +29,7 @@ html, body {
   right: 64px;
   z-index: 99;
   background-color:white;
+  outline: solid 5px #FFD700;
   width: 100px;
   height: 50px;
 }
@@ -58,7 +59,7 @@ html, body {
   width: calc(100% - 128px);
   height: 10px;
   border-radius: 5px;
-  background: #d7dcdf;
+  background: #ffffff;
   outline: none;
   padding: 0;
   margin: 0 64px;
@@ -69,7 +70,7 @@ html, body {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #2c3e50;
+  background: #FFD700;
   cursor: pointer;
   -webkit-transition: background 0.15s ease-in-out;
   transition: background 0.15s ease-in-out;
