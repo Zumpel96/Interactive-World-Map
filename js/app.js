@@ -1,40 +1,14 @@
-const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d');
-
-let img = new Image();
-img.onload = function () {
-  imageWidth = img.width;
-  imageHeight = img.height;
-
-  offsetX = -imageWidth / 2;
-  offsetY = -imageHeight / 2;
-
-  loadCSV('./data.csv')
-};
-img.src = '../img/world_map.jpg'; // Replace 'image-url.jpg' with the path to your image
-
-let lastX = canvas.width / 2;
-let lastY = canvas.height / 2;
-let dragging = false;
-let scale = 0.5;
-let offsetX = 0;
-let offsetY = 0;
-let panSpeed = 3;
-let zoomSpeed = 0.1;
 let currentYear = 0;
 let minYear = 999999;
 let maxYear = -999999;
 let marker = [];
 let currentDataEntry = null;
-let imageWidth = 0;
-let imageHeight = 0;
+let svg = document.getElementById("markers");
 
-let imageCache = [];
-
-const width = 300;
-const height = 200;
-const marginX = 20;
-const marginY = -50;
+const width = 4;
+const lineHeight = 0.25;
+const marginY = 0.35;
+const markerColor = "#FFD700";
 
 function parseCSV(csv) {
   const lines = csv.split('\n');
@@ -49,6 +23,7 @@ function parseCSV(csv) {
     const image = fields[6];
 
     const dataEntry = {
+      id: i,
       marker: title,
       timeFrom: timeFrom,
       timeUntil: timeUntil,
@@ -78,7 +53,7 @@ function loadCSV(url) {
     .then(csvData => {
       parseCSV(csvData);
       initializeSlider();
-      draw();
+      updateMarker();
     })
     .catch(error => {
       console.error('Fetch error:', error);
@@ -100,6 +75,8 @@ function updateSlider(slideAmount)
   const yearText = document.getElementById("year-text");
   yearText.innerHTML = currentYear;
 
+  updateMarker();
+
   if(currentDataEntry){
     marker.forEach(function(dataEntry) {
       if(dataEntry.timeFrom > currentYear || dataEntry.timeUntil < currentYear) return;
@@ -107,50 +84,132 @@ function updateSlider(slideAmount)
 
       if (currentDataEntry.xLoc === dataEntry.xLoc && currentDataEntry.yLoc === dataEntry.yLoc) {
         currentDataEntry = dataEntry;
+        markerClicked(dataEntry.id);
       }
     });
 
     if(currentDataEntry.timeFrom > currentYear || currentDataEntry.timeUntil < currentYear) {
       currentDataEntry = null;
+      closeTooltip();
     }
   }
-
-  draw();
 }
 
-function draw() {
-  canvas.width = window.innerWidth
-  canvas.height = window.innerHeight
-
-  ctx.translate( window.innerWidth / 2, window.innerHeight / 2 )
-  ctx.scale(scale, scale)
-  ctx.translate( -window.innerWidth / 2 + offsetX, -window.innerHeight / 2 + offsetY )
-  ctx.clearRect(0,0, window.innerWidth, window.innerHeight)
-
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, 0, 0);
-
-  marker.forEach(drawDataEntry);
-
-  if (currentDataEntry) {
-    drawTooltip(currentDataEntry);
-
-    if(currentDataEntry.image) {
-      if(currentDataEntry.image in imageCache) {
-        let img = imageCache[currentDataEntry.image];
-        drawImage(img);
-      } else {
-        let img = new Image();
-        img.onload = function () {
-          imageCache[currentDataEntry.image] = img;
-          draw();
-        };
-        img.src = '../img/TimeLinePics/' + currentDataEntry.image;
+function updateMarker() {
+  marker.forEach(function(dataEntry) {
+    if(dataEntry.timeFrom > currentYear || dataEntry.timeUntil < currentYear) {
+      if (document.getElementById("marker-" + dataEntry.id)) {
+        svg.removeChild(document.getElementById("marker-" + dataEntry.id));
       }
+      return;
     }
+
+    if(document.getElementById("marker-" + dataEntry.id)) return;
+
+    drawDataEntry(dataEntry);
+  });
+}
+
+function drawDataEntry(dataEntry) {
+  if (dataEntry.timeFrom <= currentYear && dataEntry.timeUntil >= currentYear) {
+    drawCircle(dataEntry);
+  }
+}
+
+function drawCircle(dataEntry) {
+  let newElement = document.createElementNS("http://www.w3.org/2000/svg", 'circle'); //Create a path in SVG's namespace
+  newElement.setAttribute("id", "marker-" + dataEntry.id);
+  newElement.setAttribute("cx", dataEntry.xLoc);
+  newElement.setAttribute("cy", dataEntry.yLoc);
+  newElement.setAttribute("r","0.3");
+  newElement.setAttribute("stroke","#000000");
+  newElement.setAttribute("fill",markerColor);
+  newElement.setAttribute("stroke-width","0.15");
+  newElement.setAttribute("class", "shadow");
+  newElement.setAttribute("onclick", "markerClicked(" + dataEntry.id + ")");
+
+  svg.appendChild(newElement);
+}
+
+function markerClicked(id) {
+  closeTooltip();
+  currentDataEntry = marker[id - 1];
+  drawTooltip(currentDataEntry);
+}
+
+function splitText(longText, maxChars) {
+  let splitText = longText.split(" ");
+  let currentLine = "";
+  let lines = [];
+
+  splitText.forEach(function(text, index) {
+    currentLine = currentLine === "" ? text : currentLine + " " + text;
+
+    if(currentLine.length > maxChars) {
+      lines.push(currentLine);
+      currentLine = "";
+    }
+  });
+
+  if(currentLine !== "") {
+    lines.push(currentLine);
   }
 
-  featherEdge(200, 200);
+  return lines;
+}
+
+function drawTooltip(dataEntry) {
+  let x = dataEntry.xLoc - width / 2;
+  let y = dataEntry.yLoc - 0.5;
+
+  let group = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+  group.setAttribute("id", "current-marker");
+  group.setAttribute("onclick", "closeTooltip()");
+  let splitTitle = splitText(dataEntry.marker, 36);
+  let splitContent = splitText(dataEntry.text, 36);
+
+  let newElement = document.createElementNS("http://www.w3.org/2000/svg", 'rect'); //Create a path in SVG's namespace
+  newElement.setAttribute("x", x.toString());
+  newElement.setAttribute("y", y.toString());
+  newElement.setAttribute("width", width.toString());
+  newElement.setAttribute("height", (lineHeight * splitTitle.length + splitContent.length * lineHeight + marginY).toString());
+  newElement.setAttribute("stroke",markerColor);
+  newElement.setAttribute("fill","#ffffff");
+  newElement.setAttribute("stroke-width","0.15");
+  newElement.setAttribute("class", "shadow");
+  group.appendChild(newElement);
+
+  splitTitle.forEach(function(line, index) {
+    let title = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+    title.setAttribute("x", (x + 0.15).toString());
+    title.setAttribute("y", (y + lineHeight * index + marginY).toString());
+    title.setAttribute("fill", "black");
+    title.setAttribute("font-size", "0.2");
+    title.setAttribute("font-family", "Arial");
+    title.setAttribute("font-weight", "bold");
+    title.innerHTML = line;
+    group.appendChild(title);
+  });
+
+  splitContent.forEach(function(line, index) {
+    let text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+    text.setAttribute("x", (x + 0.15).toString());
+    text.setAttribute("y", (y + splitTitle.length * lineHeight + lineHeight * index + marginY).toString());
+    text.setAttribute("fill", "black");
+    text.setAttribute("font-size", "0.2");
+    text.setAttribute("font-family", "Arial");
+    text.innerHTML = line;
+    group.appendChild(text);
+  });
+
+  svg.appendChild(group);
+}
+
+function closeTooltip() {
+  if(document.getElementById("current-marker")) {
+    svg.removeChild(document.getElementById("current-marker"));
+    currentDataEntry = null;
+  }
 }
 
 function drawImage(img) {
@@ -168,145 +227,4 @@ function drawImage(img) {
   ctx.strokeRect(x, y, size, size);
 }
 
-function featherEdge(blurRadius, inset) {
-  ctx.filter = "blur(" + blurRadius + "px)";
-  ctx.globalCompositeOperation = "destination-in";
-  const inBy = blurRadius + inset;
-  ctx.fillRect(inBy, inBy, imageWidth - inBy * 2, imageHeight - inBy * 2);
-}
-
-function drawDataEntry(dataEntry) {
-  if (dataEntry.timeFrom <= currentYear && dataEntry.timeUntil >= currentYear) {
-    drawCircle(dataEntry);
-  }
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  let words = text.split(' ');
-  let line = '';
-  let yOffset = y;
-  let totalLines = 1;
-
-  for (let i = 0; i < words.length; i++) {
-    let testLine = line + words[i] + ' ';
-    let metrics = ctx.measureText(testLine);
-    let testWidth = metrics.width;
-
-    if (testWidth > maxWidth && i > 0) {
-      ctx.fillText(line, x, yOffset);
-      line = words[i] + ' ';
-      yOffset += lineHeight;
-      totalLines++;
-    } else {
-      line = testLine;
-    }
-  }
-
-  ctx.fillText(line, x, yOffset);
-  return totalLines;
-}
-
-function drawTooltip(dataEntry) {
-  let x = dataEntry.xLoc;
-  let y = dataEntry.yLoc;
-
-  console.log(x, y);
-
-  x = (x + offsetX) > (window.innerWidth / 2) ? x - (width + marginX) : x + marginX;
-  y = (y + offsetY) > (window.innerHeight / 2) ? y - (height + marginY) : y + marginY;
-
-  ctx.shadowBlur=30;
-  ctx.shadowColor= "#000000";
-  for(var i=0;i<5;i++){
-    ctx.shadowBlur+=0.25;
-    ctx.strokeRect(x, y, width / scale, height / scale);
-  }
-  ctx.shadowColor='rgba(0,0,0,0)';
-
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(x, y, width / scale, height / scale);
-
-  ctx.strokeStyle = "#FFD700";
-  ctx.lineWidth = 5 / scale;
-  ctx.strokeRect(x, y, width / scale, height / scale);
-
-  ctx.fillStyle = '#000000'; // Set text color
-  ctx.font = 20 / scale + 'px Arial';
-  var lines = wrapText(ctx, dataEntry.marker, x + 10 / scale, y + 30 / scale, width / scale - 20 / scale, 28 / scale);
-  ctx.font = 14 / scale + 'px Arial';
-  wrapText(ctx, dataEntry.text, x + 10 / scale, y + 30 / scale + lines * 30 / scale, width / scale - 20 / scale, 18 / scale);
-}
-
-function drawCircle(dataEntry) {
-  ctx.beginPath();
-  ctx.arc(dataEntry.xLoc, dataEntry.yLoc, 8 / scale, 0, 2 * Math.PI, false);
-  ctx.fillStyle = "#FFD700";
-  ctx.fill();
-  ctx.lineWidth = 2 / scale;
-  ctx.strokeStyle = '#000000';
-  ctx.stroke();
-}
-
-canvas.addEventListener('mousedown', function (event) {
-  const rect = canvas.getBoundingClientRect()
-  const clickedX = event.clientX - rect.left
-  const clickedY = event.clientY - rect.top
-
-  const convertedX = imageWidth / rect.width * clickedX;
-  const convertedY = imageHeight / rect.height * clickedY;
-
-  let hit = false;
-  console.log(clickedX, clickedY);
-  console.log(convertedX, convertedY);
-
-  marker.forEach(function(dataEntry) {
-    if(dataEntry.timeFrom > currentYear || dataEntry.timeUntil < currentYear) return;
-
-    let markerX = dataEntry.xLoc;
-    let markerY = dataEntry.yLoc;
-
-    if (Math.abs(clickedX - markerX) < 10 && Math.abs(clickedY - markerY) < 10) {
-      currentDataEntry = dataEntry;
-      hit = true;
-    }
-  });
-
-  if(hit) {
-    draw();
-    return;
-  }
-
-  currentDataEntry = null;
-  lastX = event.clientX;
-  lastY = event.clientY;
-  dragging = true;
-  canvas.style.cursor = 'grabbing';
-});
-
-canvas.addEventListener('mouseup', function () {
-  dragging = false;
-  canvas.style.cursor = 'grab';
-});
-
-canvas.addEventListener('mousemove', function (event) {
-  if (dragging) {
-    let deltaX = event.clientX - lastX;
-    let deltaY = event.clientY - lastY;
-    lastX = event.clientX;
-    lastY = event.clientY;
-    offsetX += deltaX * panSpeed;
-    offsetY += deltaY * panSpeed;
-    draw();
-  }
-});
-
-canvas.addEventListener('wheel', function (event) {
-  let delta = event.deltaY > 0 ? -0.1 : 0.1;
-  scale += delta * zoomSpeed;
-  scale = Math.max(0.1, scale); // Ensure scale doesn't go below 0.1
-  draw();
-});
-
-canvas.addEventListener('contextmenu', function (event) {
-  event.preventDefault();
-});
+loadCSV('./data.csv')
