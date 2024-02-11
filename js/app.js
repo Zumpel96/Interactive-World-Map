@@ -182,7 +182,7 @@ function drawTooltip(dataEntry) {
     group.appendChild(imageBox);
 
     let toolTipImage = document.createElementNS("http://www.w3.org/2000/svg", 'image'); //Create a path in SVG's namespace
-    toolTipImage.setAttribute("href", "../img/TimeLinePics/" + dataEntry.image);
+    toolTipImage.setAttribute("href", "./img/TimeLinePics/" + dataEntry.image);
     toolTipImage.setAttribute("x", (x + width / 2 - imageSize / 2).toString());
     toolTipImage.setAttribute("y", (y - imageSize).toString());
     toolTipImage.setAttribute("width", (imageSize - 0.075).toString());
