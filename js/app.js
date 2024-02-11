@@ -10,6 +10,7 @@ const lineHeight = 0.25;
 const marginY = 0.35;
 const markerColor = "#FFD700";
 const imageSize = 2;
+const baseUrl = "https://zumpel96.github.io/Interactive-World-Map"
 
 function parseCSV(csv) {
   const lines = csv.split('\n');
@@ -182,7 +183,7 @@ function drawTooltip(dataEntry) {
     group.appendChild(imageBox);
 
     let toolTipImage = document.createElementNS("http://www.w3.org/2000/svg", 'image'); //Create a path in SVG's namespace
-    toolTipImage.setAttribute("href", "./img/TimeLinePics/" + dataEntry.image);
+    toolTipImage.setAttribute("href", baseUrl + "/img/TimeLinePics/" + dataEntry.image);
     toolTipImage.setAttribute("x", (x + width / 2 - imageSize / 2).toString());
     toolTipImage.setAttribute("y", (y - imageSize).toString());
     toolTipImage.setAttribute("width", (imageSize - 0.075).toString());
